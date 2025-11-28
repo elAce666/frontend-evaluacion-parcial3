@@ -6,7 +6,7 @@ import api, { handleApiError } from './api';
  */
 
 // DATOS MOCK PARA DESARROLLO
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 let MOCK_USERS = [
   { id: 1, username: 'admin', name: 'Administrador', email: 'admin@sistema.com', role: 'ADMIN' },
@@ -17,98 +17,43 @@ let MOCK_USERS = [
 ];
 
 // Obtener todos los usuarios (solo ADMIN)
+export const listUsers = async () => {
+  const { data } = await api.get('/users');
+  return data;
+};
+
+// Alias para compatibilidad
 export const getAllUsers = async () => {
-  if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log('[Users] Obteniendo usuarios (MOCK)');
-        resolve({
-          success: true,
-          data: MOCK_USERS,
-        });
-      }, 300);
-    });
-  }
-  
   try {
-    const response = await api.get('/users');
-    
-    return {
-      success: true,
-      data: response.data,
-    };
+    const data = await listUsers();
+    return { success: true, data };
   } catch (error) {
-    console.error('[Users] Error al obtener usuarios:', error);
     const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-      data: [],
-    };
+    return { success: false, message: errorInfo.message, data: [] };
   }
 };
 
-// Obtener usuario por ID (solo ADMIN)
+// Obtener usuario por username (solo ADMIN)
+export const getUser = async (username) => {
+  const { data } = await api.get(`/users/${username}`);
+  return data;
+};
+
+// Alias para compatibilidad con ID
 export const getUserById = async (id) => {
   try {
-    const response = await api.get(`/users/${id}`);
-    
-    return {
-      success: true,
-      data: response.data,
-    };
+    const data = await getUser(id);
+    return { success: true, data };
   } catch (error) {
-    console.error(`[Users] Error al obtener usuario ${id}:`, error);
     const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-      data: null,
-    };
+    return { success: false, message: errorInfo.message, data: null };
   }
 };
 
 // Crear nuevo usuario (solo ADMIN)
-export const createUser = async (userData) => {
-  if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newUser = {
-          id: MOCK_USERS.length + 1,
-          ...userData,
-        };
-        MOCK_USERS.push(newUser);
-        console.log('[Users] Usuario creado (MOCK):', newUser);
-        resolve({
-          success: true,
-          data: newUser,
-          message: 'Usuario creado exitosamente',
-        });
-      }, 300);
-    });
-  }
-  
-  try {
-    const response = await api.post('/users', userData);
-    
-    console.log('[Users] Usuario creado exitosamente');
-    
-    return {
-      success: true,
-      data: response.data,
-      message: 'Usuario creado exitosamente',
-    };
-  } catch (error) {
-    console.error('[Users] Error al crear usuario:', error);
-    const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-    };
-  }
+export const createUser = async (u) => {
+  const { data } = await api.post('/users', u);
+  return data;
 };
 
 // Actualizar usuario (solo ADMIN)

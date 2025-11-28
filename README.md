@@ -238,4 +238,113 @@ Para consultas sobre este proyecto frontend, contacta al equipo de desarrollo.
 
 ---
 
+## 🚀 Próximos Pasos (Desde Ahora)
+
+### ✅ Estado Actual del Proyecto
+- Frontend completamente adaptado al backend Java 21 / Spring Boot 3.2.12
+- Datos mock desactivados - **conectado al backend real**
+- Base URL configurada: `http://localhost:8080/api/v1`
+- Servicios actualizados para usar endpoints: `/products`, `/orders`, `/users`
+- Login maneja respuesta `{token, usuario, rol}` del backend
+- Token JWT se envía automáticamente en header `Authorization: Bearer <token>`
+- Matriz de permisos actualizada: VENDEDOR puede crear órdenes
+
+### 📋 Tareas Pendientes
+
+#### 1. Arrancar Backend
+```bash
+# En el directorio del backend Java Spring Boot
+./mvnw spring-boot:run
+# o
+java -jar target/nombre-del-jar.jar
+```
+- Verificar que esté corriendo en `http://localhost:8080`
+- Confirmar que los endpoints `/api/v1/auth/login`, `/api/v1/products`, etc. respondan
+
+#### 2. Arrancar Frontend
+```bash
+# En este directorio
+npm run dev
+```
+- Acceder a `http://localhost:3000` (o el puerto que indique Vite)
+
+#### 3. Probar Login
+Usuarios de prueba (deben estar en el backend):
+- **Admin**: `username: admin`, `password: admin123`
+- **Vendedor**: `username: vendedor`, `password: vendedor123`
+- **Cliente**: `username: cliente`, `password: cliente123`
+
+Verificar que:
+- Login guarde `token`, `rol`, `usuario` en localStorage
+- Redirección según rol funcione correctamente
+- Token se envíe en peticiones subsecuentes
+
+#### 4. Validar CRUD de Productos (ADMIN)
+- Listar productos
+- Crear nuevo producto
+- Editar producto existente
+- Eliminar producto
+- Verificar que VENDEDOR solo pueda ver (no editar/eliminar)
+
+#### 5. Validar Órdenes (ADMIN y VENDEDOR)
+- Listar órdenes
+- Crear nueva orden (ADMIN y VENDEDOR deben poder)
+- Editar orden (solo ADMIN)
+- Eliminar orden (solo ADMIN)
+- Ver detalles de orden
+
+#### 6. Validar Gestión de Usuarios (solo ADMIN)
+- Listar usuarios
+- Crear usuario con rol
+- Obtener usuario por username
+- Verificar que otros roles no accedan
+
+#### 7. Manejo de Errores
+- Probar login con credenciales inválidas
+- Intentar acceder a rutas sin autenticación
+- Intentar operaciones sin permisos (403)
+- Verificar redirección al login en token expirado (401)
+
+#### 8. Optimizaciones Opcionales
+- [ ] Implementar mensajes toast para feedback visual
+- [ ] Agregar loading states en peticiones
+- [ ] Implementar paginación en listados grandes
+- [ ] Agregar búsqueda y filtros en productos/órdenes
+- [ ] Mejorar manejo de errores con mensajes específicos
+- [ ] Implementar validación de formularios
+- [ ] Agregar confirmaciones antes de eliminar
+- [ ] Mejorar estilos y responsividad
+
+#### 9. Documentación
+- [ ] Actualizar screenshots del proyecto funcionando
+- [ ] Documentar estructura de payloads para crear/editar
+- [ ] Crear ejemplos de uso de cada endpoint
+- [ ] Documentar casos de error y cómo manejarlos
+
+#### 10. Despliegue (Opcional)
+- [ ] Configurar variables de entorno para producción
+- [ ] Ajustar CORS en backend para dominio de producción
+- [ ] Build optimizado: `npm run build`
+- [ ] Desplegar en servicio de hosting (Vercel, Netlify, etc.)
+
+### 🔍 Checklist de Integración
+- [x] `.env` creado con `VITE_API_BASE_URL`
+- [x] Servicios actualizados a `/auth`, `/products`, `/orders`, `/users`
+- [x] Interceptor Axios configurado para JWT
+- [x] Login maneja `{token, usuario, rol}`
+- [x] localStorage usa claves: `token`, `rol`, `usuario`
+- [x] Función `hasRole(['ADMIN'])` implementada
+- [x] Permisos de VENDEDOR actualizados (puede crear órdenes)
+- [x] Datos mock desactivados
+- [ ] Backend corriendo y accesible
+- [ ] Pruebas de integración completadas
+- [ ] Validación de roles en todas las rutas
+
+### 📖 Recursos de Referencia
+- **Guía de integración backend**: Ver `front-back.md` adjunto
+- **Swagger del backend**: `http://localhost:8080/swagger-ui/index.html`
+- **API Docs**: `http://localhost:8080/v3/api-docs`
+
+---
+
 **Desarrollado para Evaluación Parcial N° 3**

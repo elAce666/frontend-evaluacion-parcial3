@@ -29,7 +29,13 @@ export const isCliente = (userRole) => {
   return normalized === ROLES.CLIENTE;
 };
 
-// Verificar si tiene uno de los roles especificados
+// Verificar si tiene uno de los roles especificados (según guía del backend)
+export const hasRole = (roles) => {
+  const current = localStorage.getItem('rol');
+  return !!current && roles.includes(current);
+};
+
+// Verificar si tiene uno de los roles especificados (función alternativa)
 export const hasAnyRole = (userRole, allowedRoles) => {
   const normalized = normalizeRole(userRole);
   
@@ -103,13 +109,14 @@ export const getPermissions = (userRole) => {
       };
       
     case ROLES.VENDEDOR:
-      // Vendedor solo puede ver productos y órdenes (sin modificar)
+      // VENDEDOR puede crear órdenes (ventas)
       return {
         ...permissions,
         viewDashboard: true,
         viewProducts: true,
         viewOrders: true,
         viewOrderDetails: true,
+        createOrder: true,
       };
       
     case ROLES.CLIENTE:

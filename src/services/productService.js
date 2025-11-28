@@ -6,7 +6,7 @@ import api, { handleApiError } from './api';
  */
 
 // DATOS MOCK PARA DESARROLLO
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 let MOCK_PRODUCTS = [
   { id: 1, name: 'Laptop HP', description: 'Laptop HP Core i7, 16GB RAM', price: 899.99, stock: 15, category: 'Electrónica' },
@@ -20,194 +20,58 @@ let MOCK_PRODUCTS = [
 ];
 
 // Obtener todos los productos
-export const getAllProducts = async () => {
-  if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log('[Products] Obteniendo productos (MOCK)');
-        resolve({
-          success: true,
-          data: MOCK_PRODUCTS,
-        });
-      }, 300);
-    });
-  }
-  
+export const listProducts = async () => {
   try {
-    const response = await api.get('/products');
-    
-    return {
-      success: true,
-      data: response.data,
-    };
+    const { data } = await api.get('/products');
+    return data;
   } catch (error) {
     console.error('[Products] Error al obtener productos:', error);
+    throw error;
+  }
+};
+
+// Alias para compatibilidad
+export const getAllProducts = async () => {
+  try {
+    const data = await listProducts();
+    return { success: true, data };
+  } catch (error) {
     const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-      data: [],
-    };
+    return { success: false, message: errorInfo.message, data: [] };
   }
 };
 
 // Obtener producto por ID
+export const getProduct = async (id) => {
+  const { data } = await api.get(`/products/${id}`);
+  return data;
+};
+
+// Alias para compatibilidad
 export const getProductById = async (id) => {
   try {
-    const response = await api.get(`/products/${id}`);
-    
-    return {
-      success: true,
-      data: response.data,
-    };
+    const data = await getProduct(id);
+    return { success: true, data };
   } catch (error) {
-    console.error(`[Products] Error al obtener producto ${id}:`, error);
     const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-      data: null,
-    };
+    return { success: false, message: errorInfo.message, data: null };
   }
 };
 
 // Crear nuevo producto (solo ADMIN)
-export const createProduct = async (productData) => {
-  if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newProduct = {
-          id: MOCK_PRODUCTS.length + 1,
-          ...productData,
-          price: parseFloat(productData.price),
-          stock: parseInt(productData.stock),
-        };
-        MOCK_PRODUCTS.push(newProduct);
-        console.log('[Products] Producto creado (MOCK):', newProduct);
-        resolve({
-          success: true,
-          data: newProduct,
-          message: 'Producto creado exitosamente',
-        });
-      }, 300);
-    });
-  }
-  
-  try {
-    const response = await api.post('/products', productData);
-    
-    console.log('[Products] Producto creado exitosamente');
-    
-    return {
-      success: true,
-      data: response.data,
-      message: 'Producto creado exitosamente',
-    };
-  } catch (error) {
-    console.error('[Products] Error al crear producto:', error);
-    const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-    };
-  }
+export const createProduct = async (p) => {
+  const { data } = await api.post('/products', p);
+  return data;
 };
 
 // Actualizar producto existente (solo ADMIN)
-export const updateProduct = async (id, productData) => {
-  if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const index = MOCK_PRODUCTS.findIndex(p => p.id === id);
-        if (index !== -1) {
-          MOCK_PRODUCTS[index] = {
-            ...MOCK_PRODUCTS[index],
-            ...productData,
-            price: parseFloat(productData.price),
-            stock: parseInt(productData.stock),
-          };
-          console.log('[Products] Producto actualizado (MOCK):', MOCK_PRODUCTS[index]);
-          resolve({
-            success: true,
-            data: MOCK_PRODUCTS[index],
-            message: 'Producto actualizado exitosamente',
-          });
-        } else {
-          resolve({
-            success: false,
-            message: 'Producto no encontrado',
-          });
-        }
-      }, 300);
-    });
-  }
-  
-  try {
-    const response = await api.put(`/products/${id}`, productData);
-    
-    console.log(`[Products] Producto ${id} actualizado exitosamente`);
-    
-    return {
-      success: true,
-      data: response.data,
-      message: 'Producto actualizado exitosamente',
-    };
-  } catch (error) {
-    console.error(`[Products] Error al actualizar producto ${id}:`, error);
-    const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-    };
-  }
+export const updateProduct = async (id, p) => {
+  const { data } = await api.put(`/products/${id}`, p);
+  return data;
 };
 
 // Eliminar producto (solo ADMIN)
-export const deleteProduct = async (id) => {
-  if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const index = MOCK_PRODUCTS.findIndex(p => p.id === id);
-        if (index !== -1) {
-          MOCK_PRODUCTS.splice(index, 1);
-          console.log('[Products] Producto eliminado (MOCK)');
-          resolve({
-            success: true,
-            message: 'Producto eliminado exitosamente',
-          });
-        } else {
-          resolve({
-            success: false,
-            message: 'Producto no encontrado',
-          });
-        }
-      }, 300);
-    });
-  }
-  
-  try {
-    await api.delete(`/products/${id}`);
-    
-    console.log(`[Products] Producto ${id} eliminado exitosamente`);
-    
-    return {
-      success: true,
-      message: 'Producto eliminado exitosamente',
-    };
-  } catch (error) {
-    console.error(`[Products] Error al eliminar producto ${id}:`, error);
-    const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-    };
-  }
-};
+export const deleteProduct = async (id) => api.delete(`/products/${id}`);
 
 // Buscar productos por nombre
 export const searchProducts = async (query) => {

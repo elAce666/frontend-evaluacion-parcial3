@@ -6,7 +6,7 @@ import api, { handleApiError } from './api';
  */
 
 // DATOS MOCK PARA DESARROLLO
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 let MOCK_ORDERS = [
   { 
@@ -47,189 +47,73 @@ let MOCK_ORDERS = [
 ];
 
 // Obtener todas las órdenes
+export const listOrders = async () => {
+  const { data } = await api.get('/orders');
+  return data;
+};
+
+// Alias para compatibilidad
 export const getAllOrders = async () => {
-  if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log('[Orders] Obteniendo órdenes (MOCK)');
-        resolve({
-          success: true,
-          data: MOCK_ORDERS,
-        });
-      }, 300);
-    });
-  }
-  
   try {
-    const response = await api.get('/orders');
-    
-    return {
-      success: true,
-      data: response.data,
-    };
+    const data = await listOrders();
+    return { success: true, data };
   } catch (error) {
-    console.error('[Orders] Error al obtener órdenes:', error);
     const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-      data: [],
-    };
+    return { success: false, message: errorInfo.message, data: [] };
   }
 };
 
 // Obtener orden por ID
+export const getOrder = async (id) => {
+  const { data } = await api.get(`/orders/${id}`);
+  return data;
+};
+
+// Alias para compatibilidad
 export const getOrderById = async (id) => {
   try {
-    const response = await api.get(`/orders/${id}`);
-    
-    return {
-      success: true,
-      data: response.data,
-    };
+    const data = await getOrder(id);
+    return { success: true, data };
   } catch (error) {
-    console.error(`[Orders] Error al obtener orden ${id}:`, error);
     const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-      data: null,
-    };
+    return { success: false, message: errorInfo.message, data: null };
   }
 };
 
-// Crear nueva orden
-export const createOrder = async (orderData) => {
-  if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newOrder = {
-          id: MOCK_ORDERS.length + 1,
-          ...orderData,
-          status: 'PENDING',
-          createdAt: new Date().toISOString(),
-        };
-        MOCK_ORDERS.push(newOrder);
-        console.log('[Orders] Orden creada (MOCK):', newOrder);
-        resolve({
-          success: true,
-          data: newOrder,
-          message: 'Orden creada exitosamente',
-        });
-      }, 300);
-    });
-  }
-  
-  try {
-    const response = await api.post('/orders', orderData);
-    
-    console.log('[Orders] Orden creada exitosamente');
-    
-    return {
-      success: true,
-      data: response.data,
-      message: 'Orden creada exitosamente',
-    };
-  } catch (error) {
-    console.error('[Orders] Error al crear orden:', error);
-    const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-    };
-  }
+// Crear nueva orden (ADMIN, VENDEDOR)
+export const createOrder = async (o) => {
+  const { data } = await api.post('/orders', o);
+  return data;
 };
 
-// Actualizar estado de orden (solo ADMIN)
+// Actualizar orden (solo ADMIN)
+export const updateOrder = async (id, o) => {
+  const { data } = await api.put(`/orders/${id}`, o);
+  return data;
+};
+
+// Alias para compatibilidad con estado
 export const updateOrderStatus = async (id, status) => {
-  if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const order = MOCK_ORDERS.find(o => o.id === id);
-        if (order) {
-          order.status = status;
-          console.log('[Orders] Estado actualizado (MOCK)');
-          resolve({
-            success: true,
-            data: order,
-            message: 'Estado actualizado exitosamente',
-          });
-        } else {
-          resolve({
-            success: false,
-            message: 'Orden no encontrada',
-          });
-        }
-      }, 300);
-    });
-  }
-  
   try {
-    const response = await api.patch(`/orders/${id}/status`, { status });
-    
-    console.log(`[Orders] Estado de orden ${id} actualizado a ${status}`);
-    
-    return {
-      success: true,
-      data: response.data,
-      message: 'Estado actualizado exitosamente',
-    };
+    const data = await updateOrder(id, { status });
+    return { success: true, data, message: 'Estado actualizado exitosamente' };
   } catch (error) {
-    console.error(`[Orders] Error al actualizar estado de orden ${id}:`, error);
     const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-    };
+    return { success: false, message: errorInfo.message };
   }
 };
 
-// Cancelar orden
+// Eliminar orden (solo ADMIN)
+export const deleteOrder = async (id) => api.delete(`/orders/${id}`);
+
+// Cancelar orden (alias)
 export const cancelOrder = async (id) => {
-  if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const order = MOCK_ORDERS.find(o => o.id === id);
-        if (order) {
-          order.status = 'CANCELLED';
-          console.log('[Orders] Orden cancelada (MOCK)');
-          resolve({
-            success: true,
-            data: order,
-            message: 'Orden cancelada exitosamente',
-          });
-        } else {
-          resolve({
-            success: false,
-            message: 'Orden no encontrada',
-          });
-        }
-      }, 300);
-    });
-  }
-  
   try {
-    const response = await api.patch(`/orders/${id}/cancel`);
-    
-    console.log(`[Orders] Orden ${id} cancelada`);
-    
-    return {
-      success: true,
-      data: response.data,
-      message: 'Orden cancelada exitosamente',
-    };
+    await deleteOrder(id);
+    return { success: true, message: 'Orden cancelada exitosamente' };
   } catch (error) {
-    console.error(`[Orders] Error al cancelar orden ${id}:`, error);
     const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-    };
+    return { success: false, message: errorInfo.message };
   }
 };
 

@@ -33,7 +33,7 @@ const MOCK_USERS = {
   },
 };
 
-const USE_MOCK_DATA = true; // Cambiar a false cuando el backend esté disponible
+const USE_MOCK_DATA = false; // Usar backend real
 
 // Iniciar sesión
 export const login = async (credentials) => {
@@ -42,7 +42,6 @@ export const login = async (credentials) => {
     return new Promise((resolve) => {
       setTimeout(() => {
         const user = MOCK_USERS[credentials.username];
-        
         if (user && user.password === credentials.password) {
           const token = 'mock-jwt-token-' + Date.now();
           const userData = {
@@ -50,18 +49,13 @@ export const login = async (credentials) => {
             username: user.username,
             name: user.name,
             email: user.email,
-            role: user.role,
+            rol: user.role, // Cambiado a 'rol' para coincidir con backend
           };
-          
-          // Guardar token y datos del usuario en localStorage
           localStorage.setItem('authToken', token);
           localStorage.setItem('userData', JSON.stringify(userData));
-          
-          console.log('[Auth] Login exitoso (MOCK):', userData);
-          
           resolve({
             success: true,
-            data: { token, user: userData },
+            data: { token, usuario: userData, rol: user.role },
           });
         } else {
           resolve({
@@ -69,91 +63,55 @@ export const login = async (credentials) => {
             message: 'Credenciales inválidas',
           });
         }
-      }, 500); // Simular delay de red
+      }, 500);
     });
   }
-  
-  // Código original para backend real
+  // Código para backend real
   try {
-    const response = await api.post('/auth/login', credentials);
+    const { data } = await api.post('/auth/login', credentials);
+    if (data.error) throw new Error(data.error);
     
-    const { token, user } = response.data;
-    
-    // Guardar token y datos del usuario en localStorage
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('userData', JSON.stringify(user));
-    
-    console.log('[Auth] Login exitoso:', user);
+    const { token, usuario, rol } = data;
+    localStorage.setItem('token', token);
+    localStorage.setItem('rol', rol);
+    localStorage.setItem('usuario', usuario);
     
     return {
       success: true,
-      data: { token, user },
+      data: { token, usuario, rol },
     };
   } catch (error) {
-    console.error('[Auth] Error en login:', error);
     const errorInfo = handleApiError(error);
-    
     return {
       success: false,
-      message: errorInfo.message,
+      message: errorInfo.message || error.message,
       status: errorInfo.status,
     };
   }
 };
 
 // Cerrar sesión
-export const logout = async () => {
-  try {
-    // Llamar al endpoint de logout (opcional, depende del backend)
-    await api.post('/auth/logout');
-    
-    // Limpiar localStorage
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    
-    console.log('[Auth] Logout exitoso');
-    
-    return { success: true };
-  } catch (error) {
-    console.error('[Auth] Error en logout:', error);
-    
-    // Aunque falle el logout en el backend, limpiar localStorage localmente
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('userData');
-    
-    return { success: true };
-  }
+export const logout = () => {
+  ['token', 'rol', 'usuario'].forEach(k => localStorage.removeItem(k));
+  return { success: true };
 };
 
 // Obtener usuario actual desde localStorage
 export const getCurrentUser = () => {
-  const userDataString = localStorage.getItem('userData');
-  
-  if (!userDataString) {
-    return null;
-  }
-  
-  try {
-    const userData = JSON.parse(userDataString);
-    return userData;
-  } catch (error) {
-    console.error('[Auth] Error al parsear datos del usuario:', error);
-    localStorage.removeItem('userData');
-    return null;
-  }
+  const usuario = localStorage.getItem('usuario');
+  const rol = localStorage.getItem('rol');
+  return usuario ? { usuario, rol } : null;
 };
 
 // Verificar si el usuario está autenticado
 export const isAuthenticated = () => {
-  const token = localStorage.getItem('authToken');
-  const user = getCurrentUser();
-  
-  return !!(token && user);
+  const token = localStorage.getItem('token');
+  return !!token;
 };
 
 // Obtener token actual
 export const getToken = () => {
-  return localStorage.getItem('authToken');
+  return localStorage.getItem('token');
 };
 
 // Verificar si el usuario tiene un rol específico
@@ -181,8 +139,7 @@ export const hasAnyRole = (roles) => {
 
 // Obtener rol del usuario actual
 export const getUserRole = () => {
-  const user = getCurrentUser();
-  return user?.role || null;
+  return localStorage.getItem('rol');
 };
 
 // Verificar validez del token con el backend

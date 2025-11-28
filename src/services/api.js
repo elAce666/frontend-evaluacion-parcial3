@@ -1,65 +1,36 @@
 import axios from 'axios';
 
 // URL base de la API del backend
-// Usar variable de entorno si está disponible, sino usar localhost
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 // Crear instancia de Axios con configuración base
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000, // 10 segundos de timeout
+  timeout: 10000,
 });
 
 // Interceptor para añadir el token JWT a todas las peticiones
 api.interceptors.request.use(
   (config) => {
-    // Obtener el token del localStorage
-    const token = localStorage.getItem('authToken');
-    
+    const token = localStorage.getItem('token');
     if (token) {
-      // Añadir el token al header Authorization
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    console.log(`[API Request] ${config.method.toUpperCase()} ${config.url}`);
     return config;
   },
-  (error) => {
-    console.error('[API Request Error]', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Interceptor para manejar respuestas y errores
 api.interceptors.response.use(
-  (response) => {
-    console.log(`[API Response] ${response.status} ${response.config.url}`);
-    return response;
-  },
+  (response) => response,
   (error) => {
-    console.error('[API Response Error]', error.response?.status, error.response?.data);
-    
-    // Si el token es inválido o expiró (401), cerrar sesión
     if (error.response?.status === 401) {
-      console.warn('[Auth] Token inválido o expirado. Cerrando sesión...');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
-      
-      // Redirigir al login
+      ['token', 'rol', 'usuario'].forEach(k => localStorage.removeItem(k));
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }
-    
-    // Si no tiene permisos (403)
-    if (error.response?.status === 403) {
-      console.warn('[Auth] Acceso denegado. Permisos insuficientes.');
-      alert('No tienes permisos para realizar esta acción.');
-    }
-    
     return Promise.reject(error);
   }
 );
