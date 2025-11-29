@@ -348,3 +348,37 @@ Verificar que:
 ---
 
 **Desarrollado para Evaluación Parcial N° 3**
+\n+## 🧪 Pruebas Automatizadas (Jest)
+\n+Se ha incorporado un entorno de pruebas unitarias con **Jest** para validar la lógica de los servicios sin depender del backend real.
+\n+### ✅ Configuración
+- Scripts disponibles:
+  - `npm test` ejecuta todas las pruebas.
+  - `npm run test:watch` ejecuta en modo observación.
+  - `npm run test:coverage` genera reporte de cobertura en la carpeta `coverage/`.
+- Archivo de configuración: `jest.config.cjs` (entorno `jsdom`, transform con `babel-jest`).
+- Transpilación: `.babelrc` con presets `@babel/preset-env` y `@babel/preset-react`.
+- Mock HTTP: `__tests__/api.mock.js` intercepta métodos (`get`, `post`, `put`, `delete`, `patch`) evitando llamadas reales.
+\n+### 🧴 Servicios Cubiertos
+- `authService`: login, logout, token, perfil y registro.
+- `productService`: mapeo dominio perfumes (backend ➜ UI), búsqueda y filtros (`categorias`, `marcas`).
+- `orderService`: CRUD, actualización de estado, estadísticas y órdenes del usuario.
+- `userService`: CRUD, cambio de rol y actualización de perfil con persistencia en `localStorage`.
+\n+### ➕ Agregar Nuevas Pruebas
+1. Crear archivo en `__tests__/` con nombre `nombreServicio.test.js`.
+2. Importar el mock: `import '../__tests__/api.mock';`.
+3. Simular respuesta: `api.get.mockResolvedValue({ data: [...] })`.
+4. Usar `expect` para validar llamadas y transformación de datos.
+5. Ejecutar: `npm test`.
+\n+### 🧪 Ejecución Rápida (Windows cmd)
+```cmd
+npm install
+npm test
+```
+\n+### 🔄 Pruebas de Integración (Opcional)
+Para probar contra el backend real, NO importes el mock y asegúrate de tener `VITE_API_BASE_URL` apuntando al servidor. Puedes crear un nuevo archivo `*.int.test.js` y usar datos semilla.
+\n+### 📈 Recomendaciones Futuras
+- Añadir pruebas de componentes con React Testing Library.
+- Mockear tiempo y fechas para estadísticas de órdenes.
+- Validar expiración de token simulando respuestas 401 en el mock.
+\n+---
+\n+**Guía de pruebas añadida (Jest listo para usar).**

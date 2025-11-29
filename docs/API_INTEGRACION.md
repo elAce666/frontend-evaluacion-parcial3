@@ -1,5 +1,16 @@
 # Documentación de APIs e Integración
 
+## Actualización (Nov 2025)
+
+- Base URL actual: `http://localhost:8080/api/v1` (configurable vía `VITE_API_BASE_URL` en `.env`).
+- Autenticación: backend responde `{"token","usuario","rol"}`. El frontend persiste `token`, `usuario` y `rol` en `localStorage` y agrega `Authorization: Bearer <token>` automáticamente con Axios.
+- Endpoints alias utilizados por el frontend: `GET/POST/PUT/DELETE /products`, `/orders`, `/users`.
+- Dominio de productos migrado a perfumes: campos de backend `nombre`, `marca`, `categoria`, `precio`, `stock`, `descripcion` mapeados a UI `name`, `brand`, `category`, `price`, `stock`, `description`.
+- Filtros habilitados: `GET /categorias`, `GET /marcas` y filtros por query `GET /products?categoriaId=<id>&marcaId=<id>`.
+- Órdenes y usuarios: servicios validados consumiendo exclusivamente los alias del backend. `VENDEDOR` puede crear órdenes; operaciones administrativas reservadas a `ADMIN`.
+
+Los bloques siguientes han sido actualizados para reflejar este contrato.
+
 ## 📡 Integración Frontend-Backend
 
 ---
@@ -243,8 +254,8 @@ export const createProduct = async (productData) => {
 ```javascript
 import axios from 'axios';
 
-// URL base configurable
-const API_BASE_URL = 'http://localhost:8080/api';
+// URL base configurable por entorno
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 // Crear instancia de Axios
 const api = axios.create({
@@ -252,7 +263,14 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 segundos
+  timeout: 10000,
+});
+
+// Interceptores (resumen)
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
 });
 
 export default api;
@@ -314,7 +332,7 @@ public class SecurityConfig {
 
 #### 1. Login
 
-**Endpoint:** `POST /api/auth/login`
+**Endpoint:** `POST /api/v1/auth/login`
 
 **Request:**
 ```json
@@ -328,13 +346,8 @@ public class SecurityConfig {
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 1,
-    "username": "admin",
-    "name": "Administrador",
-    "email": "admin@example.com",
-    "role": "ADMIN"
-  }
+  "usuario": "admin",
+  "rol": "ADMIN"
 }
 ```
 
@@ -361,11 +374,11 @@ Authorization: Bearer <token>
 }
 ```
 
-### Productos
+### Productos (Perfumes)
 
 #### 1. Listar Productos
 
-**Endpoint:** `GET /api/products`
+**Endpoint:** `GET /api/v1/products`
 
 **Headers:**
 ```
@@ -379,22 +392,43 @@ Authorization: Bearer <token>
 [
   {
     "id": 1,
-    "name": "Laptop Dell",
-    "description": "Laptop empresarial de alto rendimiento",
-    "price": 1299.99,
+    "nombre": "Eau de Parfum",
+    "marca": "Chanel",
+    "categoria": "Mujer",
+    "precio": 129.99,
     "stock": 15,
-    "category": "Electrónica"
-  },
-  {
-    "id": 2,
-    "name": "Mouse Logitech",
-    "description": "Mouse inalámbrico ergonómico",
-    "price": 29.99,
-    "stock": 50,
-    "category": "Accesorios"
+    "descripcion": "Notas florales y cítricas"
   }
 ]
 ```
+
+#### Filtros
+
+- `GET /api/v1/categorias`
+- `GET /api/v1/marcas`
+- `GET /api/v1/products?categoriaId=<id>&marcaId=<id>`
+
+### Órdenes
+
+- Listar: `GET /api/v1/orders`
+- Obtener: `GET /api/v1/orders/{id}`
+- Crear: `POST /api/v1/orders` (ADMIN, VENDEDOR)
+- Actualizar: `PUT /api/v1/orders/{id}` (ADMIN)
+- Eliminar/Cancelar: `DELETE /api/v1/orders/{id}` (ADMIN)
+- Mis órdenes: `GET /api/v1/orders/my-orders`
+- Detalle: `GET /api/v1/orders/{id}/details`
+- Estadísticas: `GET /api/v1/orders/statistics` (ADMIN)
+
+### Usuarios
+
+- Listar: `GET /api/v1/users` (ADMIN)
+- Obtener: `GET /api/v1/users/{username}` (ADMIN)
+- Crear: `POST /api/v1/users` (ADMIN)
+- Actualizar: `PUT /api/v1/users/{id}` (ADMIN)
+- Eliminar: `DELETE /api/v1/users/{id}` (ADMIN)
+- Cambiar rol: `PATCH /api/v1/users/{id}/role` (ADMIN)
+- Mi perfil: `GET /api/v1/users/profile`
+- Actualizar mi perfil: `PUT /api/v1/users/profile`
 
 #### 2. Obtener Producto por ID
 
