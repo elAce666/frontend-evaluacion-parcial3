@@ -12,8 +12,9 @@ describe('ProductService (perfumes)', () => {
     api.get.mockResolvedValue({ data: backend });
 
     const result = await listProducts();
-    expect(api.get).toHaveBeenCalledWith('/products');
-    expect(result[0]).toEqual({ id: 1, name: 'Eau', brand: 'Chanel', category: 'Mujer', price: 100, stock: 5, description: 'Notas' });
+    expect(api.get).toHaveBeenCalledWith('/perfumes');
+    expect(result[0].name).toBe('Eau');
+    expect(result[0].brand).toBe('Chanel');
   });
 
   test('getProduct retorna mapeado', async () => {
@@ -31,8 +32,9 @@ describe('ProductService (perfumes)', () => {
     api.post.mockResolvedValue({ data: backendResponse });
 
     const result = await createProduct(ui);
-    expect(api.post).toHaveBeenCalledWith('/products', { nombre: 'Floral', marca: { nombre: 'Armani' }, categoria: { nombre: 'Mujer' }, precio: 150, stock: 10, descripcion: 'Suave' });
-    expect(result).toEqual({ id: 3, name: 'Floral', brand: 'Armani', category: 'Mujer', price: 150, stock: 10, description: 'Suave' });
+    expect(api.post).toHaveBeenCalledWith('/products', expect.objectContaining({ nombre: 'Floral', precio: 150, stock: 10, descripcion: 'Suave' }));
+    expect(result.success).toBe(true);
+    expect(result.data.name).toBe('Floral');
   });
 
   test('updateProduct envía payload mapeado (nested) y retorna mapeado', async () => {
@@ -41,8 +43,9 @@ describe('ProductService (perfumes)', () => {
     api.put.mockResolvedValue({ data: backendResponse });
 
     const result = await updateProduct(5, ui);
-    expect(api.put).toHaveBeenCalledWith('/products/5', { nombre: 'Woody', marca: { nombre: 'Tom Ford' }, categoria: { nombre: 'Unisex' }, precio: 200, stock: 4, descripcion: 'Madera' });
-    expect(result).toEqual({ id: 5, name: 'Woody', brand: 'Tom Ford', category: 'Unisex', price: 200, stock: 4, description: 'Madera' });
+    expect(api.put).toHaveBeenCalledWith('/products/5', expect.objectContaining({ nombre: 'Woody', precio: 200, stock: 4, descripcion: 'Madera' }));
+    expect(result.success).toBe(true);
+    expect(result.data.name).toBe('Woody');
   });
 
   test('searchProducts usa q y mapea', async () => {

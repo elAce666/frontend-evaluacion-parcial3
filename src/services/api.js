@@ -10,24 +10,38 @@ const api = axios.create({
   }
 });
 
-// Cargar token guardado (si existe) al iniciar
-const token = localStorage.getItem('token');
-if (token) api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-// Ensure each request uses the latest token from localStorage
+// Interceptor para SIEMPRE agregar el token actualizado
 api.interceptors.request.use(config => {
-  const t = localStorage.getItem('token');
-  if (t) config.headers.Authorization = `Bearer ${t}`;
+  const token = localStorage.getItem('token');
   
-  // Agregar timestamp para evitar cache SOLO en GET requests
-  if (config.method === 'get') {
-    config.params = {
-      ...config.params,
-      _t: Date.now()
-    };
+  // Si no es un endpoint público, agregar token
+  if (!config.noAuth) {
+    if (token) {
+      // Asegurar que Authorization se configure en el objeto correcto
+      if (!config.headers) {
+        config.headers = {};
+      }
+      config.headers['Authorization'] = `Bearer ${token}`;
+      console.log('[API] Token agregado a la petición:', config.method, config.url);
+    } else {
+      console.warn('[API] No hay token disponible para:', config.method, config.url);
+    }
+  } else {
+    // Endpoint público - remover Authorization si existe
+    delete config.headers?.Authorization;
+    delete api.defaults.headers.common?.Authorization;
   }
+  
+  // Agregar timestamp para evitar cache en GET
+  if (config.method === 'get') {
+    config.params = { ...config.params, _t: Date.now() };
+  }
+  
   return config;
-}, error => Promise.reject(error));
+}, error => {
+  console.error('[API] Error en interceptor:', error);
+  return Promise.reject(error);
+});
 
 export function handleApiError(error) {
   if (!error) return { status: 0, message: 'Unknown error' };

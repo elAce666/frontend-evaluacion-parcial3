@@ -129,9 +129,9 @@ Authorization: Bearer <token>
 | Lista Productos | ✅ | ✅ (solo lectura) | ❌ |
 | Gestión Productos | ✅ | ❌ | ❌ |
 | Lista Órdenes | ✅ | ✅ (solo lectura) | ❌ |
-| Gestión Órdenes | ✅ | ❌ | ❌ |
+| Crear Órdenes | ❌ | ✅ | ✅ (en tienda) |
 | Gestión Usuarios | ✅ | ❌ | ❌ |
-| Tienda | ✅ | ❌ | ✅ |
+| Tienda | ❌ | ❌ | ✅ |
 | Reportes | ✅ | ❌ | ❌ |
 
 ## 🔄 Integración con Backend
@@ -147,11 +147,13 @@ POST   /api/products            - Crear producto (Admin)
 PUT    /api/products/{id}       - Actualizar producto (Admin)
 DELETE /api/products/{id}       - Eliminar producto (Admin)
 GET    /api/orders              - Listar órdenes
-GET    /api/orders/{id}         - Detalle orden
-POST   /api/orders              - Crear orden
-GET    /api/users               - Listar usuarios (Admin)
-POST   /api/users               - Crear usuario (Admin)
-PUT    /api/users/{id}          - Actualizar usuario (Admin)
+GET    /api/v1/orders/{id}           - Detalle orden
+GET    /api/v1/orders/{id}/details   - Productos de la orden
+POST   /api/v1/orders                - Crear orden (Vendedor/Cliente)
+GET    /api/v1/users                 - Listar usuarios (Admin)
+POST   /api/v1/users                 - Crear usuario (Admin)
+PUT    /api/v1/users/{id}            - Actualizar usuario (Admin)
+DELETE /api/v1/users/{id}            - Eliminar usuario (Admin)
 ```
 
 ## 📱 Componentes Clave

@@ -7,6 +7,7 @@ module.exports = {
   setupFiles: ['whatwg-fetch'],
   setupFilesAfterEnv: ['<rootDir>/__tests__/setupTests.js'],
   roots: ['<rootDir>/src', '<rootDir>/__tests__'],
+  testMatch: ['**/__tests__/**/*.test.js'],
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/src/$1',
   },

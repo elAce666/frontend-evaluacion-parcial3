@@ -6,12 +6,15 @@ describe('AuthService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
+    api.defaults = { headers: { common: {} } };
+    api.post = jest.fn();
+    api.get = jest.fn();
   });
 
   test('login guarda token, rol y usuario', async () => {
-    api.post.mockResolvedValue({ data: { token: 'jwt-123', usuario: 'admin', rol: 'ADMIN' } });
+    api.post.mockResolvedValue({ data: { token: 'jwt-123', id: 1, usuario: 'admin', rol: 'ADMIN' } });
     const result = await login({ username: 'admin', password: 'admin123' });
-    expect(api.post).toHaveBeenCalledWith('/auth/login', { username: 'admin', password: 'admin123' });
+    expect(api.post).toHaveBeenCalledWith('/auth/login', { username: 'admin', password: 'admin123' }, { noAuth: true });
     expect(result.success).toBe(true);
     expect(localStorage.getItem('token')).toBe('jwt-123');
     expect(localStorage.getItem('rol')).toBe('ADMIN');
@@ -19,21 +22,20 @@ describe('AuthService', () => {
   });
 
   test('logout elimina credenciales', () => {
+    api.defaults = { headers: { common: {} } };
     localStorage.setItem('token', 't');
-    localStorage.setItem('rol', 'ADMIN');
-    localStorage.setItem('usuario', 'admin');
+    localStorage.setItem('userData', JSON.stringify({ username: 'admin', role: 'ADMIN' }));
     logout();
     expect(localStorage.getItem('token')).toBeNull();
-    expect(localStorage.getItem('rol')).toBeNull();
-    expect(localStorage.getItem('usuario')).toBeNull();
+    expect(localStorage.getItem('userData')).toBeNull();
   });
 
   test('getCurrentUser retorna usuario y rol', () => {
-    localStorage.setItem('usuario', 'cliente');
-    localStorage.setItem('rol', 'CLIENTE');
+    localStorage.setItem('userData', JSON.stringify({ username: 'cliente', role: 'CLIENTE' }));
     const u = getCurrentUser();
-    expect(u.usuario).toBe('cliente');
-    expect(u.rol).toBe('CLIENTE');
+    expect(u).not.toBeNull();
+    expect(u.username).toBe('cliente');
+    expect(u.role).toBe('CLIENTE');
   });
 
   test('isAuthenticated depende de token', () => {
@@ -44,16 +46,17 @@ describe('AuthService', () => {
 
   test('getToken y getUserRole', () => {
     localStorage.setItem('token', 'abc');
-    localStorage.setItem('rol', 'VENDEDOR');
+    localStorage.setItem('userData', JSON.stringify({ username: 'vendedor', role: 'VENDEDOR' }));
     expect(getToken()).toBe('abc');
-    expect(getUserRole()).toBe('VENDEDOR');
+    const role = getUserRole();
+    expect(role).toBe('VENDEDOR');
   });
 
   test('validateToken true cuando status 200', async () => {
-    api.get.mockResolvedValue({ status: 200 });
-    const valid = await validateToken();
-    expect(api.get).toHaveBeenCalledWith('/auth/validate');
-    expect(valid).toBe(true);
+    api.post.mockResolvedValue({ data: { valid: true, usuario: 'admin', rol: 'ADMIN' } });
+    const result = await validateToken('test-token');
+    expect(api.post).toHaveBeenCalledWith('/auth/validate-token', { token: 'test-token' });
+    expect(result.valid).toBe(true);
   });
 
   test('register retorna datos', async () => {

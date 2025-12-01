@@ -241,7 +241,13 @@ export const updateMyProfile = async (userData) => {
   }
 };
 
+// Alias para compatibilidad con Reports
+export const getAll = async () => {
+  return getAllUsers();
+};
+
 export default {
+  getAll,
   getAllUsers,
   getUserById,
   createUser,

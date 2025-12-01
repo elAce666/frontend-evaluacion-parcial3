@@ -7,8 +7,10 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ProductList from './pages/ProductList';
 import OrderList from './pages/OrderList';
+import CreateOrder from './pages/CreateOrder';
 import UserManagement from './pages/UserManagement';
 import Store from './pages/Store';
+import Reports from './pages/Reports';
 import { ROLES } from './utils/constants';
 import './styles/App.css';
 
@@ -72,6 +74,17 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              {/* Crear Orden - ADMIN y VENDEDOR */}
+              <Route
+                path="/orders/new"
+                element={
+                  <ProtectedRoute>
+                    <RoleGuard allowedRoles={[ROLES.ADMIN, ROLES.ADMINISTRADOR, ROLES.VENDEDOR]}>
+                      <CreateOrder />
+                    </RoleGuard>
+                  </ProtectedRoute>
+                }
+              />
               
               {/* Usuarios - Solo ADMIN */}
               <Route
@@ -91,6 +104,18 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Store />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Reportes - Solo ADMIN */}
+              <Route
+                path="/reports"
+                element={
+                  <ProtectedRoute>
+                    <RoleGuard allowedRoles={[ROLES.ADMIN, ROLES.ADMINISTRADOR]}>
+                      <Reports />
+                    </RoleGuard>
                   </ProtectedRoute>
                 }
               />

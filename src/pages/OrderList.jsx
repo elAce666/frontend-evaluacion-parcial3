@@ -89,6 +89,11 @@ const OrderList = () => {
     <div className="page-container">
       <div className="page-header">
         <h1>📋 Órdenes</h1>
+        {permissions.createOrder && (
+          <Link to="/orders/new" className="btn-primary" title="Crear nueva orden">
+            ➕ Nueva Orden
+          </Link>
+        )}
       </div>
       
       {error && <div className="error-message">{error}</div>}

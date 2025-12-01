@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAllProducts } from '../services/productService';
 import { createOrder } from '../services/orderService';
 import { useAuth } from '../context/AuthContext';
@@ -8,11 +9,15 @@ import { useAuth } from '../context/AuthContext';
  * Solo accesible por rol CLIENTE
  */
 const Store = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showCart, setShowCart] = useState(false);
+  const [medioPago, setMedioPago] = useState('efectivo');
+  const [cuotas, setCuotas] = useState(1);
   
   // Cargar productos al montar
   useEffect(() => {
@@ -21,15 +26,23 @@ const Store = () => {
   
   const loadProducts = async () => {
     setIsLoading(true);
-    
-    const result = await getAllProducts();
-    
-    if (result.success) {
-      // Solo mostrar productos con stock disponible
-      setProducts(result.data.filter(p => p.stock > 0));
+    setError('');
+
+    try {
+      const result = await getAllProducts();
+      if (result.success) {
+        const list = Array.isArray(result.data) ? result.data : [];
+        setProducts(list.filter(p => (p.stock ?? 0) > 0));
+      } else {
+        setError(result.message || 'No se pudieron cargar los productos');
+        setProducts([]);
+      }
+    } catch (e) {
+      setError('Error de conexión al cargar productos');
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
   
   // Agregar al carrito
@@ -78,10 +91,11 @@ const Store = () => {
     ));
   };
   
-  // Calcular total
-  const getTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
+  // Calcular subtotal, IVA (19%) y total
+  const getSubtotal = () => cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const IVA_PORCENTAJE = 0.19;
+  const getIva = () => getSubtotal() * IVA_PORCENTAJE;
+  const getTotal = () => getSubtotal() + getIva();
 
   // Formatear precio en CLP
   const formatPrice = (price) => {
@@ -100,19 +114,24 @@ const Store = () => {
     }
     
     const confirmed = window.confirm(
-      `¿Confirmar compra por ${formatPrice(getTotal())}?`
+      `¿Confirmar compra por ${formatPrice(getTotal())} (${medioPago}${medioPago === 'credito' && cuotas > 1 ? `, ${cuotas} cuotas` : ''})?`
     );
     
     if (confirmed) {
       const orderData = {
         customerId: user.id,
         customerName: user.name || user.username,
+        cliente: { id: user.id },
+        medioPago,
+        cuotas: medioPago === 'credito' ? cuotas : 1,
         items: cart.map(item => ({
           productId: item.id,
           productName: item.name,
           quantity: item.quantity,
           price: item.price,
         })),
+        subtotal: getSubtotal(),
+        iva: getIva(),
         total: getTotal(),
       };
       
@@ -123,6 +142,7 @@ const Store = () => {
         setCart([]);
         setShowCart(false);
         loadProducts(); // Recargar para actualizar stock
+        navigate('/orders'); // Ver órdenes recientes
       } else {
         alert(`Error: ${result.message}`);
       }
@@ -149,6 +169,15 @@ const Store = () => {
           🛒 Carrito ({cart.length})
         </button>
       </div>
+
+      {error && (
+        <div className="error-message" style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 8 }}>{error}</div>
+          <div>
+            <button className="btn-secondary" onClick={loadProducts}>Reintentar</button>
+          </div>
+        </div>
+      )}
       
       <div className="products-grid">
         {products.length === 0 ? (
@@ -198,6 +227,28 @@ const Store = () => {
             <p className="cart-empty">El carrito está vacío</p>
           ) : (
             <>
+              {/* Selección de medio de pago */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ marginRight: 8 }}>Medio de pago:</label>
+                <select value={medioPago} onChange={(e) => setMedioPago(e.target.value)}>
+                  <option value="efectivo">Efectivo</option>
+                  <option value="debito">Débito</option>
+                  <option value="credito">Crédito</option>
+                </select>
+              </div>
+
+              {/* Selección de cuotas si es crédito */}
+              {medioPago === 'credito' && (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ marginRight: 8 }}>Cuotas:</label>
+                  <select value={cuotas} onChange={(e) => setCuotas(Number(e.target.value))}>
+                    {[1,3,6,12,24].map(n => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="cart-items">
                 {cart.map((item) => (
                   <div key={item.id} className="cart-item">
@@ -234,9 +285,21 @@ const Store = () => {
               </div>
               
               <div className="cart-footer">
-                <div className="cart-total">
-                  <strong>Total:</strong>
-                  <strong>{formatPrice(getTotal())}</strong>
+                <div className="cart-total" style={{ display: 'grid', gap: 4 }}>
+                  <div>
+                    <strong>Subtotal:</strong> <strong>{formatPrice(getSubtotal())}</strong>
+                  </div>
+                  <div>
+                    <strong>IVA (19%):</strong> <strong>{formatPrice(getIva())}</strong>
+                  </div>
+                  <div>
+                    <strong>Total:</strong> <strong>{formatPrice(getTotal())}</strong>
+                  </div>
+                  {medioPago === 'credito' && cuotas > 1 && (
+                    <div>
+                      <strong>Cuota aprox ({cuotas}):</strong> <strong>{formatPrice(getTotal() / cuotas)}</strong>
+                    </div>
+                  )}
                 </div>
                 <button 
                   onClick={handleCheckout}

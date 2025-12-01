@@ -20,7 +20,7 @@ export const login = async (credentials) => {
 
   try {
     console.log('[authService] Login request with credentials:', { username: credentials.username });
-    const { data } = await api.post('/auth/login', credentials);
+    const { data } = await api.post('/auth/login', credentials, { noAuth: true });
     console.log('[authService] Login response data:', data);
     
     if (data.error) {
@@ -28,10 +28,10 @@ export const login = async (credentials) => {
       return { success: false, message: data.error };
     }
 
-    const { token, usuario, rol } = data;
-    console.log('[authService] Login success. Token:', token.substring(0, 20) + '...', 'Usuario:', usuario, 'Rol:', rol);
+    const { token, id, usuario, rol } = data;
+    console.log('[authService] Login success. Token:', token.substring(0, 20) + '...', 'Usuario:', usuario, 'Rol:', rol, 'ID:', id);
 
-    const userObj = { username: usuario, role: rol };
+    const userObj = { id, username: usuario, role: rol };
 
     localStorage.setItem('token', token);
     localStorage.setItem('userData', JSON.stringify(userObj));
@@ -50,7 +50,7 @@ export const login = async (credentials) => {
 };
 
 export const logout = () => {
-  ['token', 'userData'].forEach(k => localStorage.removeItem(k));
+  ['token', 'userData', 'rol', 'usuario'].forEach(k => localStorage.removeItem(k));
   delete api.defaults.headers.common['Authorization'];
   return { success: true };
 };

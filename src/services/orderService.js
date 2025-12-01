@@ -56,7 +56,22 @@ export const listOrders = async () => {
 export const getAllOrders = async () => {
   try {
     const data = await listOrders();
-    return { success: true, data };
+    
+    // Transform backend DTO fields to frontend format
+    const transformedData = data.map(order => ({
+      id: order.id,
+      customerId: order.clienteId,
+      customerName: order.clienteNombre,
+      vendorId: order.vendedorId,
+      vendorName: order.vendedorNombre,
+      total: order.montoTotal,
+      date: order.fecha,
+      createdAt: order.fechaCreacion,
+      status: order.estado,
+      observations: order.observaciones
+    }));
+    
+    return { success: true, data: transformedData };
   } catch (error) {
     const errorInfo = handleApiError(error);
     return { success: false, message: errorInfo.message, data: [] };
@@ -80,10 +95,45 @@ export const getOrderById = async (id) => {
   }
 };
 
-// Crear nueva orden (ADMIN, VENDEDOR)
+// Crear nueva orden (ADMIN, VENDEDOR, CLIENTE)
 export const createOrder = async (o) => {
-  const { data } = await api.post('/orders', o);
-  return data;
+  // Acepta contratos flexibles desde UI y normaliza para BE
+  const medioPago = o.medioPago || o.paymentMethod || 'efectivo';
+  const cuotas = o.cuotas ?? (medioPago === 'credito' ? 1 : 1);
+  const subtotal = o.subtotal ?? o.montoSubtotal ?? 0;
+  const iva = o.iva ?? o.tax ?? 0;
+  const total = o.total ?? o.montoTotal ?? o.monto_total ?? (subtotal + iva);
+
+  const detalle = (o.items || o.detalle || []).map(it => ({
+    productId: it.productId ?? it.id,
+    cantidad: Number(it.quantity ?? it.cantidad ?? 1),
+    precio_unitario: Number(it.price ?? it.precio_unitario ?? 0),
+  }));
+
+  const payload = {
+    // Contrato DTO OrderRequest en backend
+    clienteId: o.customerId ?? o.clienteId ?? o?.cliente?.id,
+    vendedorId: o.vendedorId ?? o?.vendedor?.id,
+    montoTotal: Number(total),
+    estado: (o.estado || o.status || 'PENDIENTE').toUpperCase(),
+    // Extra (no requerido por DTO, backend los ignora si no mapea):
+    medioPago,
+    cuotas,
+    detalle,
+    subtotal,
+    iva,
+  };
+
+  try {
+    console.log('[createOrder] Enviando payload:', payload);
+    console.log('[createOrder] Token en localStorage:', localStorage.getItem('token'));
+    const { data } = await api.post('/orders', payload);
+    return { success: true, data };
+  } catch (error) {
+    console.error('[createOrder] Error:', error.response?.status, error.response?.data);
+    const errorInfo = handleApiError(error);
+    return { success: false, message: errorInfo.message };
+  }
 };
 
 // Actualizar orden (solo ADMIN)
@@ -176,9 +226,18 @@ export const getOrderDetails = async (id) => {
   try {
     const response = await api.get(`/orders/${id}/details`);
     
+    // Transform backend DTO fields to frontend format
+    const transformedData = response.data.map(item => ({
+      productId: item.perfumeId,
+      productName: item.perfumeNombre,
+      quantity: item.cantidad,
+      price: item.precioUnitario,
+      subtotal: item.subtotal
+    }));
+    
     return {
       success: true,
-      data: response.data,
+      data: transformedData,
     };
   } catch (error) {
     console.error(`[Orders] Error al obtener detalle de orden ${id}:`, error);
@@ -213,8 +272,20 @@ export const getOrderStatistics = async () => {
   }
 };
 
+// Alias getAll para compatibilidad con Reports
+export const getAll = async () => {
+  try {
+    const data = await listOrders();
+    return { success: true, data };
+  } catch (error) {
+    const errorInfo = handleApiError(error);
+    return { success: false, message: errorInfo.message, data: [] };
+  }
+};
+
 export default {
   getAllOrders,
+  getAll,
   getOrderById,
   createOrder,
   updateOrderStatus,

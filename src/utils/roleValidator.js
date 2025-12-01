@@ -86,7 +86,7 @@ export const getPermissions = (userRole) => {
   switch (normalized) {
     case ROLES.ADMIN:
     case ROLES.ADMINISTRADOR:
-      // Administrador tiene todos los permisos
+      // Administrador puede ver todo pero NO crear órdenes (solo VENDEDOR y CLIENTE)
       return {
         viewDashboard: true,
         viewProducts: true,
@@ -94,7 +94,7 @@ export const getPermissions = (userRole) => {
         editProduct: true,
         deleteProduct: true,
         viewOrders: true,
-        createOrder: true,
+        createOrder: false,  // ADMIN NO crea órdenes
         editOrder: true,
         cancelOrder: true,
         viewOrderDetails: true,
@@ -103,8 +103,8 @@ export const getPermissions = (userRole) => {
         editUser: true,
         deleteUser: true,
         changeUserRole: true,
-        viewStore: true,
-        makePurchase: true,
+        viewStore: false,
+        makePurchase: false,
         viewReports: true,
       };
       

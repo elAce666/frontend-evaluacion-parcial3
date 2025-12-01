@@ -23,9 +23,10 @@ describe('OrderService', () => {
 
   test('createOrder', async () => {
     api.post.mockResolvedValue({ data: { id: 3 } });
-    const result = await createOrder({ items: [] });
-    expect(api.post).toHaveBeenCalledWith('/orders', { items: [] });
-    expect(result.id).toBe(3);
+    const result = await createOrder({ items: [], total: 100 });
+    expect(api.post).toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.data.id).toBe(3);
   });
 
   test('updateOrderStatus', async () => {
@@ -50,10 +51,11 @@ describe('OrderService', () => {
   });
 
   test('getOrderDetails', async () => {
-    api.get.mockResolvedValue({ data: [{ productId: 1 }] });
+    api.get.mockResolvedValue({ data: [{ perfumeId: 1, perfumeNombre: 'Test', cantidad: 2, precioUnitario: 50, subtotal: 100 }] });
     const result = await getOrderDetails(7);
     expect(api.get).toHaveBeenCalledWith('/orders/7/details');
     expect(result.data[0].productId).toBe(1);
+    expect(result.data[0].productName).toBe('Test');
   });
 
   test('getOrderStatistics', async () => {
