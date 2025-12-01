@@ -82,6 +82,15 @@ const Store = () => {
   const getTotal = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
+
+  // Formatear precio en CLP
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP',
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
   
   // Procesar compra
   const handleCheckout = async () => {
@@ -91,7 +100,7 @@ const Store = () => {
     }
     
     const confirmed = window.confirm(
-      `¿Confirmar compra por $${getTotal().toFixed(2)}?`
+      `¿Confirmar compra por ${formatPrice(getTotal())}?`
     );
     
     if (confirmed) {
@@ -147,12 +156,22 @@ const Store = () => {
         ) : (
           products.map((product) => (
             <div key={product.id} className="product-card">
-              <div className="product-image">📦</div>
+              <div className="product-image">
+                {product.image ? (
+                  <img src={product.image} alt={product.name} />
+                ) : (
+                  <div className="image-placeholder">📦</div>
+                )}
+              </div>
               <h3>{product.name}</h3>
               <p className="product-description">{product.description}</p>
               <div className="product-info">
-                <span className="product-price">${product.price}</span>
-                <span className="product-stock">Stock: {product.stock}</span>
+                <div className="product-price-section">
+                  <span className="product-price">{product.priceFormatted || `$${product.price}`}</span>
+                </div>
+                <div className="product-stock-section">
+                  <span className="product-stock">Stock: {product.stock}</span>
+                </div>
               </div>
               <button 
                 onClick={() => addToCart(product)}
@@ -184,7 +203,7 @@ const Store = () => {
                   <div key={item.id} className="cart-item">
                     <div className="item-info">
                       <h4>{item.name}</h4>
-                      <p>${item.price} c/u</p>
+                      <p>{item.priceFormatted || `$${item.price}`} c/u</p>
                     </div>
                     <div className="item-quantity">
                       <button 
@@ -202,7 +221,7 @@ const Store = () => {
                       </button>
                     </div>
                     <div className="item-total">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      {formatPrice(item.price * item.quantity)}
                     </div>
                     <button 
                       onClick={() => removeFromCart(item.id)}
@@ -217,7 +236,7 @@ const Store = () => {
               <div className="cart-footer">
                 <div className="cart-total">
                   <strong>Total:</strong>
-                  <strong>${getTotal().toFixed(2)}</strong>
+                  <strong>{formatPrice(getTotal())}</strong>
                 </div>
                 <button 
                   onClick={handleCheckout}

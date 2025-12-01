@@ -1,27 +1,45 @@
-# Frontend - Sistema de Gestión con Control de Acceso por Roles
+# 🎯 Frontend - Sistema de Gestión con Control de Acceso por Roles
 
-## 📋 Descripción del Proyecto
+**Evaluación Parcial N° 3 | React + Vite | Autenticación JWT | Control de Roles**
 
-Frontend desarrollado con React + Vite para la **Evaluación Parcial N° 3**. Este proyecto implementa un sistema completo de autenticación, gestión de sesiones persistente y control de acceso basado en roles (Administrador, Vendedor, Cliente).
+## 📚 Documentación Consolidada
+
+Este proyecto tiene **2 archivos de documentación completos**:
+
+### 📖 1. **SETUP_FUNCIONAMIENTO.md** ⭐ COMIENZA AQUÍ
+- ✅ Inicio rápido (5 minutos)
+- ✅ Instalación paso a paso
+- ✅ Configuración requerida
+- ✅ Integración REST (endpoints)
+- ✅ Autenticación y JWT
+- ✅ Control de roles
+- ✅ Troubleshooting
+
+### 📖 2. **REFERENCIA_USUARIO.md**
+- ✅ Manual de usuario (guía completa por rol)
+- ✅ Datos de ejemplo para backend
+- ✅ Estructura de base de datos
+- ✅ Guía de presentación (para tu defensa)
+- ✅ Preguntas anticipadas y respuestas
+- ✅ Patrones de diseño implementados
 
 ## 🎯 Características Principales
 
-### 1. Integración con API REST
+### 1. ✅ Integración con API REST
 - Consumo de endpoints del backend Spring Boot mediante Axios
-- Manejo eficiente de datos (productos, boletas, usuarios)
+- Manejo eficiente de datos (productos, órdenes, usuarios)
 - Interceptores HTTP para gestión automática de tokens JWT
 
-### 2. Gestión de Sesiones (Persistencia)
+### 2. ✅ Gestión de Sesiones (Persistencia)
 - Sistema de autenticación con JWT
 - Almacenamiento seguro de tokens en localStorage
 - Persistencia de sesión tras recargar página
-- Renovación automática de tokens
 - Cierre de sesión con limpieza completa
 
-### 3. Control de Acceso por Roles
+### 3. ✅ Control de Acceso por Roles
 - **Administrador**: Acceso total a todas las funcionalidades
-- **Vendedor**: Acceso a productos, órdenes y detalles (vistas limitadas)
-- **Cliente**: Solo acceso a la tienda (máximas restricciones)
+- **Vendedor**: Acceso a productos, órdenes (vistas limitadas)
+- **Cliente**: Solo acceso a la tienda
 
 ## 🚀 Instalación y Ejecución
 

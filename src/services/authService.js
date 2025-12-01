@@ -1,190 +1,120 @@
-import api, { handleApiError } from './api';
+import api from './api';
 
-/**
- * Servicio de Autenticación
- * Gestiona login, logout y verificación de sesión
- */
+// NOTE: normalize auth data across the app
+// localStorage keys used:
+// - token: JWT token string
+// - userData: JSON string with user info { username, role, name?, email? }
 
-// DATOS MOCK PARA DESARROLLO
-const MOCK_USERS = {
-  admin: { 
-    username: 'admin', 
-    password: 'admin123', 
-    id: 1,
-    name: 'Administrador',
-    email: 'admin@sistema.com',
-    role: 'ADMIN' 
-  },
-  vendedor: { 
-    username: 'vendedor', 
-    password: 'vendedor123',
-    id: 2,
-    name: 'Vendedor',
-    email: 'vendedor@sistema.com',
-    role: 'VENDEDOR' 
-  },
-  cliente: { 
-    username: 'cliente', 
-    password: 'cliente123',
-    id: 3,
-    name: 'Cliente',
-    email: 'cliente@sistema.com',
-    role: 'CLIENTE' 
-  },
-};
+const USE_MOCK_DATA = false;
 
-const USE_MOCK_DATA = false; // Usar backend real
-
-// Iniciar sesión
 export const login = async (credentials) => {
-  // Si usamos datos mock
   if (USE_MOCK_DATA) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const user = MOCK_USERS[credentials.username];
-        if (user && user.password === credentials.password) {
-          const token = 'mock-jwt-token-' + Date.now();
-          const userData = {
-            id: user.id,
-            username: user.username,
-            name: user.name,
-            email: user.email,
-            rol: user.role, // Cambiado a 'rol' para coincidir con backend
-          };
-          localStorage.setItem('authToken', token);
-          localStorage.setItem('userData', JSON.stringify(userData));
-          resolve({
-            success: true,
-            data: { token, usuario: userData, rol: user.role },
-          });
-        } else {
-          resolve({
-            success: false,
-            message: 'Credenciales inválidas',
-          });
-        }
-      }, 500);
-    });
-  }
-  // Código para backend real
-  try {
-    const { data } = await api.post('/auth/login', credentials);
-    if (data.error) throw new Error(data.error);
-    
-    const { token, usuario, rol } = data;
+    // keep behavior similar to real API for tests
+    const token = 'mock-jwt-token-' + Date.now();
+    const userObj = { username: credentials.username, role: credentials.username.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'CLIENTE' };
     localStorage.setItem('token', token);
+    localStorage.setItem('userData', JSON.stringify(userObj));
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    return { success: true, data: { user: userObj, token } };
+  }
+
+  try {
+    console.log('[authService] Login request with credentials:', { username: credentials.username });
+    const { data } = await api.post('/auth/login', credentials);
+    console.log('[authService] Login response data:', data);
+    
+    if (data.error) {
+      console.error('[authService] Login error:', data.error);
+      return { success: false, message: data.error };
+    }
+
+    const { token, usuario, rol } = data;
+    console.log('[authService] Login success. Token:', token.substring(0, 20) + '...', 'Usuario:', usuario, 'Rol:', rol);
+
+    const userObj = { username: usuario, role: rol };
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('userData', JSON.stringify(userObj));
+    // compatibility keys used elsewhere
     localStorage.setItem('rol', rol);
     localStorage.setItem('usuario', usuario);
-    
-    return {
-      success: true,
-      data: { token, usuario, rol },
-    };
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    return { success: true, data: { user: userObj, token } };
   } catch (error) {
-    const errorInfo = handleApiError(error);
-    return {
-      success: false,
-      message: errorInfo.message || error.message,
-      status: errorInfo.status,
-    };
+    console.error('[authService] Login catch error:', error);
+    console.error('[authService] Error response:', error.response?.data);
+    const errorMessage = error.response?.data?.error || error.message || 'Error desconocido';
+    return { success: false, message: errorMessage };
   }
 };
 
-// Cerrar sesión
 export const logout = () => {
-  ['token', 'rol', 'usuario'].forEach(k => localStorage.removeItem(k));
+  ['token', 'userData'].forEach(k => localStorage.removeItem(k));
+  delete api.defaults.headers.common['Authorization'];
   return { success: true };
 };
 
-// Obtener usuario actual desde localStorage
 export const getCurrentUser = () => {
-  const usuario = localStorage.getItem('usuario');
-  const rol = localStorage.getItem('rol');
-  return usuario ? { usuario, rol } : null;
+  try {
+    const raw = localStorage.getItem('userData');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
 };
 
-// Verificar si el usuario está autenticado
 export const isAuthenticated = () => {
   const token = localStorage.getItem('token');
   return !!token;
 };
 
-// Obtener token actual
 export const getToken = () => {
   return localStorage.getItem('token');
 };
 
-// Verificar si el usuario tiene un rol específico
 export const hasRole = (role) => {
   const user = getCurrentUser();
-  
-  if (!user || !user.role) {
-    return false;
-  }
-  
+  if (!user || !user.role) return false;
   return user.role.toUpperCase() === role.toUpperCase();
 };
 
-// Verificar si el usuario tiene alguno de los roles especificados
 export const hasAnyRole = (roles) => {
   const user = getCurrentUser();
-  
-  if (!user || !user.role) {
-    return false;
-  }
-  
+  if (!user || !user.role) return false;
   const userRole = user.role.toUpperCase();
   return roles.some(role => role.toUpperCase() === userRole);
 };
 
-// Obtener rol del usuario actual
 export const getUserRole = () => {
-  return localStorage.getItem('rol');
+  const user = getCurrentUser();
+  return user ? user.role : null;
 };
 
-// Verificar validez del token con el backend
-export const validateToken = async () => {
+export async function validateToken(token) {
+  // if token parameter omitted, try localStorage
+  const t = token || getToken();
+  if (!t) return { valid: false };
   try {
-    const response = await api.get('/auth/validate');
-    return response.status === 200;
-  } catch (error) {
-    console.error('[Auth] Token inválido:', error);
-    return false;
+    const { data } = await api.post('/auth/validate-token', { token: t });
+    if (data && data.valid) {
+      // normalize and store user data
+      const userObj = { username: data.usuario, role: data.rol };
+      localStorage.setItem('userData', JSON.stringify(userObj));
+      // compatibility
+      localStorage.setItem('rol', data.rol);
+      localStorage.setItem('usuario', data.usuario);
+      return { valid: true, usuario: data.usuario, rol: data.rol };
+    }
+    return { valid: false, error: data?.error };
+  } catch (e) {
+    return { valid: false, error: e.message };
   }
-};
+}
 
-// Registrar nuevo usuario (solo para admin)
 export const register = async (userData) => {
-  try {
-    const response = await api.post('/auth/register', userData);
-    
-    console.log('[Auth] Registro exitoso');
-    
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    console.error('[Auth] Error en registro:', error);
-    const errorInfo = handleApiError(error);
-    
-    return {
-      success: false,
-      message: errorInfo.message,
-      status: errorInfo.status,
-    };
-  }
+  const response = await api.post('/auth/register', userData);
+  return { success: true, data: response.data };
 };
 
-export default {
-  login,
-  logout,
-  getCurrentUser,
-  isAuthenticated,
-  getToken,
-  hasRole,
-  hasAnyRole,
-  getUserRole,
-  validateToken,
-  register,
-};
+export default { login, logout, getCurrentUser, isAuthenticated, getToken, hasRole, hasAnyRole, getUserRole, validateToken, register };

@@ -13,8 +13,14 @@ const mapFromBackend = (p) => ({
   brand: p.marca?.nombre ?? p.marca ?? null,
   category: p.categoria?.nombre ?? p.categoria ?? null,
   price: p.precio,
+  priceFormatted: new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    minimumFractionDigits: 0,
+  }).format(p.precio),
   stock: p.stock,
   description: p.descripcion,
+  image: p.imagen,
 });
 
 const mapToBackend = (p) => ({
@@ -22,14 +28,15 @@ const mapToBackend = (p) => ({
   precio: p.price,
   stock: p.stock,
   descripcion: p.description,
-  marca: typeof p.brand === 'string' ? { nombre: p.brand } : p.brand,
-  categoria: typeof p.category === 'string' ? { nombre: p.category } : p.category,
+  imagen: p.image,
+  marca: typeof p.brand === 'object' ? p.brand : { id: p.brand },
+  categoria: typeof p.category === 'object' ? p.category : { id: p.category },
 });
 
 // Obtener todos los productos
 export const listProducts = async () => {
   try {
-    const { data } = await api.get('/products');
+    const { data } = await api.get('/perfumes');
     return Array.isArray(data) ? data.map(mapFromBackend) : [];
   } catch (error) {
     console.error('[Products] Error al obtener productos:', error);
@@ -50,7 +57,7 @@ export const getAllProducts = async () => {
 
 // Obtener producto por ID
 export const getProduct = async (id) => {
-  const { data } = await api.get(`/products/${id}`);
+  const { data } = await api.get(`/perfumes/${id}`);
   return mapFromBackend(data);
 };
 
@@ -67,25 +74,75 @@ export const getProductById = async (id) => {
 
 // Crear nuevo producto (solo ADMIN)
 export const createProduct = async (p) => {
-  const payload = mapToBackend(p);
-  const { data } = await api.post('/products', payload);
-  return mapFromBackend(data);
+  try {
+    const payload = mapToBackend(p);
+    const { data } = await api.post('/perfumes', payload);
+    return { 
+      success: true, 
+      message: 'Producto creado exitosamente', 
+      data: mapFromBackend(data) 
+    };
+  } catch (error) {
+    const errorInfo = handleApiError(error);
+    return { 
+      success: false, 
+      message: errorInfo.message, 
+      data: null 
+    };
+  }
 };
 
 // Actualizar producto existente (solo ADMIN)
 export const updateProduct = async (id, p) => {
-  const payload = mapToBackend(p);
-  const { data } = await api.put(`/products/${id}`, payload);
-  return mapFromBackend(data);
+  try {
+    const payload = mapToBackend(p);
+    const { data } = await api.put(`/perfumes/${id}`, payload);
+    return { 
+      success: true, 
+      message: 'Producto actualizado exitosamente', 
+      data: mapFromBackend(data) 
+    };
+  } catch (error) {
+    const errorInfo = handleApiError(error);
+    return { 
+      success: false, 
+      message: errorInfo.message, 
+      data: null 
+    };
+  }
 };
 
 // Eliminar producto (solo ADMIN)
-export const deleteProduct = async (id) => api.delete(`/products/${id}`);
+export const deleteProduct = async (id) => {
+  try {
+    console.log('Token antes de DELETE:', localStorage.getItem('token'));
+    console.log('Eliminando desde URL:', `/perfumes/${id}`);
+    
+    const response = await api.delete(`/perfumes/${id}`);
+    
+    console.log('Respuesta DELETE:', response);
+    
+    return { 
+      success: true, 
+      message: 'Producto eliminado exitosamente'
+    };
+  } catch (error) {
+    console.error('Error en DELETE:', error);
+    console.error('Status:', error.response?.status);
+    console.error('Headers enviados:', error.config?.headers);
+    
+    const errorInfo = handleApiError(error);
+    return { 
+      success: false, 
+      message: errorInfo.message || `Error ${error.response?.status}: ${error.response?.statusText}`
+    };
+  }
+};
 
 // Buscar productos por nombre
 export const searchProducts = async (query) => {
   try {
-    const { data } = await api.get('/products', { params: { q: query } });
+    const { data } = await api.get('/perfumes', { params: { q: query } });
     return Array.isArray(data) ? data.map(mapFromBackend) : [];
   } catch (error) {
     console.error('[Products] Error al buscar productos:', error);
@@ -97,7 +154,7 @@ export const searchProducts = async (query) => {
 // Obtener productos por categoría
 export const getProductsByCategory = async (category) => {
   // Reemplazado por filtros generales
-  const { data } = await api.get('/products', { params: { categoriaId: category } });
+  const { data } = await api.get('/perfumes', { params: { categoriaId: category } });
   return Array.isArray(data) ? data.map(mapFromBackend) : [];
 };
 
@@ -115,7 +172,7 @@ export const listBrands = async () => {
 
 // Obtener productos por filtros opcionales
 export const getProductsByFilters = async ({ categoriaId, marcaId }) => {
-  const { data } = await api.get('/products', { params: { categoriaId, marcaId } });
+  const { data } = await api.get('/perfumes', { params: { categoriaId, marcaId } });
   return Array.isArray(data) ? data.map(mapFromBackend) : [];
 };
 
